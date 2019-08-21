@@ -14,6 +14,8 @@ void loop()
       Sensor433::ReceivedMessage message = r.getData();
       Serial.print("Sensor id: ");
       Serial.println(message.sensorId);
+			Serial.print("typeSensor: ");
+      Serial.println(message.typeSensor);
       Serial.print("Data as word: ");
       Serial.println(message.dataAsWord);
       Serial.print("Data as float: ");
