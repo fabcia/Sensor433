@@ -43,7 +43,7 @@ unsigned long Transmitter::encode32BitsToSend(byte sensorId, byte typeSensor, by
 {
     byte checkSum = sensorId + typeSensor + seq + data;
     unsigned long byte3 = ((0x3F & sensorId) << 2) + (0x03 & typeSensor);
-    unsigned long byte2_and_byte_1 = ((0x0F & seq) << 12) + (0x0FFF & data)
+    unsigned long byte2_and_byte_1 = ((0x0F & seq) << 12) + (0x0FFF & data);
     byte byte0 = 0xFF & checkSum;
     unsigned long dataToSend = (byte3 << 24) + (byte2_and_byte_1 << 8) + byte0;
     return dataToSend;
@@ -125,7 +125,7 @@ bool Receiver::hasNewData()
     if (numIdenticalInRow == 2)
     {
       receivedMessage.sensorId = sensorId;
-			receivedMessagetypeSensor = typeSensor;
+			receivedMessage.typeSensor = typeSensor;
       receivedMessage.dataAsWord = sensordata;
       receivedMessage.dataAsFloat = decodeTwelveBitToFloat(sensordata);
       return true;
