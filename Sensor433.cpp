@@ -17,9 +17,9 @@ Transmitter::Transmitter(byte transmitterPin) : seq(0)
   rc.setRepeatTransmit(25);      
 }
 
-void Transmitter::sendWord(byte sensorId, word data)
+void Transmitter::sendWord(byte sensorId, byte typeSensor, word data)
 {
-  unsigned long dataToSend = encode32BitsToSend(sensorId, seq, data);
+  unsigned long dataToSend = encode32BitsToSend(sensorId, typeSensor, seq, data);
 
   // Send the data twice to reduce risk of receiver getting noise
   rc.send(dataToSend, 32);
@@ -33,23 +33,23 @@ void Transmitter::sendWord(byte sensorId, word data)
   }  
 }
 
-void Transmitter::sendFloat(byte sensorId, float data)
+void Transmitter::sendFloat(byte sensorId, byte typeSensor, float data)
 {
-  word twoBytes = encodeFloatToTwoBytes(data);
-  sendWord(sensorId, twoBytes);
+  word TwelveBit = encodeFloatToTwelveBit(data);
+  sendWord(sensorId, typeSensor, TwelveBit);
 }
 
-unsigned long Transmitter::encode32BitsToSend(byte sensorId, byte seq, word data)
+unsigned long Transmitter::encode32BitsToSend(byte sensorId, byte typeSensor, byte seq, word data)
 {
-    byte checkSum = sensorId + seq + data;
-    unsigned long byte3 = ((0x0F & sensorId) << 4) + (0x0F & seq);
-    unsigned long byte2_and_byte_1 = 0xFFFF & data;
+    byte checkSum = sensorId + typeSensor + seq + data;
+    unsigned long byte3 = ((0x3F & sensorId) << 2) + (0x03 & typeSensor);
+    unsigned long byte2_and_byte_1 = ((0x0F & seq) << 12) + (0x0FFF & data)
     byte byte0 = 0xFF & checkSum;
     unsigned long dataToSend = (byte3 << 24) + (byte2_and_byte_1 << 8) + byte0;
     return dataToSend;
 }
 
-word Transmitter::encodeFloatToTwoBytes(float floatValue)
+word Transmitter::encodeFloatToTwelveBit(float floatValue)
 {
   bool sign = false;
   
@@ -57,10 +57,10 @@ word Transmitter::encodeFloatToTwoBytes(float floatValue)
     sign=true;  
       
   int times100 = (100*fabs(floatValue));
-  unsigned int twoBytes = times100 & 0X7FFF;
+  unsigned int twoBytes = times100 & 0X07FF;
   
   if (sign)
-    twoBytes |= 1 << 15;
+    twoBytes |= 1 << 11;
 
   return twoBytes;
 }
@@ -76,7 +76,7 @@ Receiver::Receiver(byte receiverInterruptNumber)
   rc.enableReceive(receiverInterruptNumber);  
 }
 
-ReceivedMessage receivedMessage = { 0, 0, 0.0 };
+ReceivedMessage receivedMessage = { 0, 0, 0, 0.0 };
 ReceivedMessage Receiver::getData()
 {
   return receivedMessage;
@@ -97,12 +97,14 @@ bool Receiver::hasNewData()
   // Get the different parts of the 32-bit / 4-byte value
   // that has been read over 433MHz
   byte checksum = newValue & 0x000000FF;
-  word sensordata = (newValue >> 8) & 0x0000FFFF;
+	word byte2_and_byte_1 = (newValue >> 8) & 0x0000FFFF;
+  word sensordata = byte2_and_byte_1 & 0x0FFF;
+	byte seq = (byte2_and_byte_1 & 0xF000) >> 12;
   byte byte3 = (newValue >> 24) & 0x000000FF;
-  byte seq = byte3 & 0x0F;
-  byte sensorId = (byte3 & 0xF0) >> 4;
+	byte typeSensor = byte3 & 0x03;
+  byte sensorId = (byte3 & 0xF12) >> 6;
 
-  byte calculatedCheckSum = 0xFF & (sensorId + seq + sensordata);
+  byte calculatedCheckSum = 0xFF & (sensorId + typeSensor + seq + sensordata);
   
   if ((calculatedCheckSum == checksum) && (seq <= 15))
   {
@@ -123,6 +125,7 @@ bool Receiver::hasNewData()
     if (numIdenticalInRow == 2)
     {
       receivedMessage.sensorId = sensorId;
+			receivedMessagetypeSensor = typeSensor;
       receivedMessage.dataAsWord = sensordata;
       receivedMessage.dataAsFloat = decodeTwoBytesToFloat(sensordata);
       return true;
@@ -134,15 +137,15 @@ bool Receiver::hasNewData()
   return false;
 }
 
-float Receiver::decodeTwoBytesToFloat(word twoBytes)
+float Receiver::decodeTwelveBitToFloat(word TwelveBit)
 {
   bool sign = false;
   
-  if ((twoBytes & 0x8000) == 0x8000) 
+  if ((TwelveBit & 0x0800) == 0x0800) 
     sign=true;  
 
-  float fl = (twoBytes & 0x7FFF) / 100.0;
-        
+	float fl = (TwelveBit & 0x07FF) / 100.0;
+
   if (sign)
     fl = -fl;
 

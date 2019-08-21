@@ -26,9 +26,9 @@
   if ( receiver.hasNewData() )
   {
     ReceivedMessage data = receiver.getData();
-    if ( data.sensorId == SENSOR1 )
+    if ( data.sensorId == SENSOR1 and data.typeSensor == TYPESENSOR2 )
     {
-      word  myTwoBytes = data.dataAsWord;
+      word  myTwelveBit = data.dataAsWord;
       // Do something
     }
     else if ( data.sensorId == SENSOR2 )
@@ -62,12 +62,12 @@ namespace Sensor433
     public:
       Transmitter(byte transmitterPin);
       void begin();   
-      void sendWord(byte sensorId, word data);
-      void sendFloat(byte sensorId, float data);
+      void sendWord(byte sensorId, byte typeSensor, word data); // max 12 bit x data
+      void sendFloat(byte sensorId, byte typeSensor, float data); // max 12 bit x data sign included
   
     private:
-      unsigned long encode32BitsToSend(byte sensorId, byte seq, word data);
-      word  encodeFloatToTwoBytes(float floatValue);
+      unsigned long encode32BitsToSend(byte sensorId, byte typeSensor, byte seq, word data);
+      word  encodeFloatToTwelveBit(float floatValue); // max 12 bit x float value
   };
 
   
@@ -78,6 +78,7 @@ namespace Sensor433
   struct ReceivedMessage
   {
     byte  sensorId;
+		byte  typeSensor;
     word  dataAsWord;
     float dataAsFloat;
   };
@@ -93,7 +94,7 @@ namespace Sensor433
       ReceivedMessage getData();
   
     private:
-      float decodeTwoBytesToFloat(word twoBytes);
+      float decodeTwelveBitToFloat(word TwelveBit);
 };
 
 }
