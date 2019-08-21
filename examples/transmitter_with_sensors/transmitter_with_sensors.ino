@@ -13,6 +13,7 @@
 //
 #define GARDEN_TEMP_ID 4
 #define SOIL_TEMP_ID   5
+#define SENSORTYPE   3
 #define TX_PIN 5
 Sensor433::Transmitter transmitter = Sensor433::Transmitter(TX_PIN);
 
@@ -41,8 +42,8 @@ void setup(void)
   Serial.println();
 
   // set the resolution to 9 bit
-  sensors.setResolution(soilThermometer, TEMPERATURE_PRECISION);
-  sensors.setResolution(outsideThermometer, TEMPERATURE_PRECISION);
+  sensors.setResolution(soilThermometer, SENSORTYPE, TEMPERATURE_PRECISION); /max 20 C
+  sensors.setResolution(outsideThermometer, SENSORTYPE, TEMPERATURE_PRECISION);
 }
 
 void loop(void)
@@ -56,8 +57,8 @@ void loop(void)
   Serial.print("Soil temp:");
   Serial.println(soilTemp);
 
-  transmitter.sendFloat(GARDEN_TEMP_ID,gardenTemp);
-  transmitter.sendFloat(SOIL_TEMP_ID,soilTemp);
+  transmitter.sendFloat(GARDEN_TEMP_ID,SENSORTYPE,gardenTemp);
+  transmitter.sendFloat(SOIL_TEMP_ID,SENSORTYPE, soilTemp);
 
   delay(1000*60);
 }
