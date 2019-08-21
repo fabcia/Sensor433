@@ -1,6 +1,7 @@
 //
 // Reads sensor values via a 433MHz receiver and the Sensor433/RCSwitch library
 // The sensor id maps to an MQTT topic and the value is published to an MQTT broker
+// warning: must be review with SENSORTYPE 
 //
 #include <Sensor433.h>
 #include <ESP8266WiFi.h>
