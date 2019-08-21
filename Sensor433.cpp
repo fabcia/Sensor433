@@ -127,7 +127,7 @@ bool Receiver::hasNewData()
       receivedMessage.sensorId = sensorId;
 			receivedMessagetypeSensor = typeSensor;
       receivedMessage.dataAsWord = sensordata;
-      receivedMessage.dataAsFloat = decodeTwoBytesToFloat(sensordata);
+      receivedMessage.dataAsFloat = decodeTwelveBitToFloat(sensordata);
       return true;
     }
   }
